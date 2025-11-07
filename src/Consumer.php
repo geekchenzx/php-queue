@@ -1,8 +1,13 @@
 <?php
+
 namespace PhpQueue;
 
+/**
+ * 消费者
+ */
 class Consumer
 {
+    /** @var Queue 核心队列实例 */
     protected $queue;
     protected $maxRetries = 3;
 
@@ -11,17 +16,25 @@ class Consumer
         $this->queue = $queue;
     }
 
+    /**
+     * 消费队列
+     * @param string $queueName 队列名
+     * @param callable $handler 消息处理回调
+     * @param int $interval 轮询间隔（秒）
+     */
     public function consume(string $queueName, callable $handler, int $interval = 1)
     {
         while (true) {
-            $this->moveDueTasks($queueName);
+            $moved =  $this->moveDueTasks($queueName);
 
             $msg = $this->queue->lpop($queueName);
-            if (!$msg) { sleep($interval); continue; }
-
+            if (!$msg && $moved === 0) {
+                // 队列和延迟队列都没有消息，休眠
+                sleep($interval);
+                continue;
+            }
             $payload = json_decode($msg, true);
             $retryKey = "retry:$queueName:" . md5($msg);
-
             try {
                 $handler($payload);
             } catch (\Throwable $e) {
@@ -37,7 +50,11 @@ class Consumer
             }
         }
     }
-
+    /**
+     * 将延迟队列中到期消息移动到主队列
+     * 延迟时间由生产者投递时动态设置
+     * @param string $queueName
+     */
     protected function moveDueTasks(string $queueName)
     {
         $delayedQueue = "delayed:$queueName";
