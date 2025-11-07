@@ -6,5 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Geekchenzx\\PhpQueue\\' => array($baseDir . '/src'),
+    'Predis\\' => array($vendorDir . '/predis/predis/src'),
+    'PhpQueue\\' => array($baseDir . '/src'),
 );

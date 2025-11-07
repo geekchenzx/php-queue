@@ -1,10 +1,14 @@
 {
     "name": "geekchenzx/php-queue",
     "license": "MIT",
+    "require": {
+        "php": ">=7.2",
+        "predis/predis": "^2.0"
+    },
     "autoload": {
         "psr-4": {
             "PhpQueue\\": "src/"
         }
-    },
-    "require": {}
+    }
+    
 }
