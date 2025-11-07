@@ -2,7 +2,7 @@
     "name": "geekchenzx/php-queue",
     "license": "MIT",
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.4",
         "predis/predis": "^2.0"
     },
     "autoload": {
