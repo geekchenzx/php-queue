@@ -20,8 +20,10 @@ class Queue
      * 构造方法，初始化 Redis 连接
      * @param array $config ['host'=>string,'port'=>int,'password'=>string]
      */
-    public function __construct(array $config = [])
+    public function __construct()
     {
+        $config =  Config::get("redis");
+
         $this->redis = $this->connect($config);
     }
 

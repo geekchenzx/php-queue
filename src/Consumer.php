@@ -2,6 +2,8 @@
 
 namespace PhpQueue;
 
+use PhpQueue\Config;
+
 /**
  * 消费者
  */
@@ -10,9 +12,13 @@ class Consumer
     /** @var Queue 核心队列实例 */
     protected $queue;
     protected $maxRetries = 3;
+    /** @var Config 配置文件 */
+    protected $config;
 
     public function __construct(Queue $queue)
     {
+        $this->config = Config::get("consumer");
+
         $this->queue = $queue;
     }
 
@@ -25,12 +31,11 @@ class Consumer
     public function consume(string $queueName, callable $handler, int $interval = 1)
     {
         while (true) {
-            $moved =  $this->moveDueTasks($queueName);
-
+            $this->moveDueTasks($queueName);
             $msg = $this->queue->lpop($queueName);
-            if (!$msg && $moved === 0) {
+            if (!$msg) {
                 // 队列和延迟队列都没有消息，休眠
-                sleep($interval);
+                sleep($this->config['interval']);
                 continue;
             }
             $payload = json_decode($msg, true);
@@ -38,10 +43,11 @@ class Consumer
             try {
                 $handler($payload);
             } catch (\Throwable $e) {
+                echo "error: {$e->getMessage()}\n";
                 $retries = $this->queue->incr($retryKey);
                 $this->queue->expire($retryKey, 3600);
 
-                if ($retries > $this->maxRetries) {
+                if ($retries > $this->config['max_retries']) {
                     $this->queue->rpush("dlq:$queueName", $msg);
                     $this->queue->del($retryKey);
                 } else {
@@ -66,11 +72,13 @@ class Consumer
         }
     }
 
-    protected function pushDelayRetry(string $queueName, array $data, int $delay)
+    protected function pushDelayRetry(string $queueName, array $data, int $delay = 0)
     {
         $payload = json_encode($data, JSON_UNESCAPED_UNICODE);
         $delayedQueue = "delayed:$queueName";
-        $score = time() + $delay;
+        $delay = $delay ?? $this->config['retry_delay'];
+
+        $score = time() + $delay -= $delay;
         $this->queue->zadd($delayedQueue, $score, $payload);
     }
 }
