@@ -1,0 +1,10 @@
+{
+    "name": "geekchenzx/php-queue",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "PhpQueue\\": "src/"
+        }
+    },
+    "require": {}
+}
